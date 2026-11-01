@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.idea
+.vscode
+**/bin
+**/obj
+artifacts
+TestResults
+*.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,39 @@
+@page "/quests"
+@rendermode InteractiveServer
+@using QuestForge.Core
+@inject IQuestService QuestService
+@inject PlayerStateService PlayerState
+@inject AuthenticationStateProvider AuthenticationState
+@attribute [Authorize]
+<PageTitle>Quests | QuestForge</PageTitle>
+
+<div class="page-heading"><div><span class="eyebrow">QUEST LOG</span><h1>Choose your next challenge</h1><p>Keep quests specific and achievable. Each completion strengthens you and one skill.</p></div></div>
+
+<section class="panel quest-form">
+    <div class="section-heading"><h2>@(editingId is null ? "New quest" : "Edit quest")</h2>@if (editingId is not null) { <button class="ghost" @onclick="CancelEdit">Cancel</button> }</div>
+    <div class="form-grid"><label>Title<input @bind="draft.Title" maxlength="100" placeholder="Build the authentication flow" /></label><label>Skill<select @bind="draft.Skill">@foreach (var skill in skills) { <option>@skill</option> }</select></label><label>Difficulty<select @bind="draft.Difficulty">@foreach (var difficulty in Enum.GetValues<QuestDifficulty>()) { <option value="@difficulty">@difficulty</option> }</select></label></div>
+    <label>Description<textarea @bind="draft.Description" placeholder="What does done look like?"></textarea></label>
+    @if (message is not null) { <p class="form-message" role="status">@message</p> }
+    <button class="button" @onclick="Save">@(editingId is null ? "Add to quest log" : "Save changes")</button>
+</section>
+
+<section class="panel filters"><label>Search<input @bind="search" @bind:event="oninput" @onkeyup="Refresh" placeholder="Search quests" /></label><label>Status<select @bind="status" @bind:after="Refresh"><option value="">All</option>@foreach (var value in Enum.GetValues<QuestStatus>()) { <option value="@value">@value</option> }</select></label><label>Difficulty<select @bind="difficulty" @bind:after="Refresh"><option value="">All</option>@foreach (var value in Enum.GetValues<QuestDifficulty>()) { <option value="@value">@value</option> }</select></label></section>
+
+<section class="panel"><div class="section-heading"><h2>Quest archive</h2><span>@quests.Count shown</span></div>
+    @if (deleteCandidate is not null) { <div class="confirm" role="alert"><p>Delete this active quest? This cannot be undone.</p><button class="ghost" @onclick="() => deleteCandidate = null">Keep it</button><button class="button danger" @onclick="ConfirmDelete">Delete quest</button></div> }
+    <DataList Items="quests" Context="quest"><ItemTemplate><QuestCard Quest="quest" OnComplete="Complete" OnEdit="BeginEdit" OnDelete="AskDelete" /></ItemTemplate><EmptyContent><div class="empty"><h3>No quests match</h3><p>Change the filters or add a new quest.</p></div></EmptyContent></DataList>
+</section>
+
+@code {
+    private static readonly string[] skills = ["Programming", "Intelligence", "Creativity", "Fitness", "Discipline", "Communication"];
+    private QuestForm draft = new(); private IReadOnlyList<Quest> quests = []; private string userId = ""; private string? message; private string search = ""; private string status = ""; private string difficulty = ""; private Guid? editingId; private Guid? deleteCandidate;
+    protected override async Task OnInitializedAsync() { var user = (await AuthenticationState.GetAuthenticationStateAsync()).User; userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new InvalidOperationException("Authenticated user ID is missing."); await Refresh(); }
+    private async Task Refresh() { QuestStatus? parsedStatus = Enum.TryParse<QuestStatus>(status, out var s) ? s : null; QuestDifficulty? parsedDifficulty = Enum.TryParse<QuestDifficulty>(difficulty, out var d) ? d : null; quests = await QuestService.ListAsync(userId, new(parsedStatus, parsedDifficulty, search)); }
+    private async Task Save() { var value = new QuestDraft(draft.Title, draft.Description, draft.Difficulty, draft.Skill); var result = editingId is null ? await QuestService.CreateAsync(userId, value) : await QuestService.UpdateAsync(userId, editingId.Value, value); message = result.IsSuccess ? (editingId is null ? "Quest added." : "Quest updated.") : result.Error; if (result.IsSuccess) { CancelEdit(); await Refresh(); } }
+    private void BeginEdit(Quest quest) { editingId = quest.Id; draft = new() { Title = quest.Title, Description = quest.Description, Difficulty = quest.Difficulty, Skill = quest.Skill }; message = null; }
+    private void CancelEdit() { editingId = null; draft = new(); }
+    private void AskDelete(Guid id) => deleteCandidate = id;
+    private async Task ConfirmDelete() { if (deleteCandidate is null) return; var result = await QuestService.DeleteAsync(userId, deleteCandidate.Value); message = result.IsSuccess ? "Quest deleted." : result.Error; deleteCandidate = null; await Refresh(); }
+    private async Task Complete(Guid id) { var result = await PlayerState.CompleteAsync(userId, id); message = result.IsSuccess ? "Quest completed. XP awarded once." : result.Error; await Refresh(); }
+    private sealed class QuestForm { public string Title { get; set; } = ""; public string Description { get; set; } = ""; public QuestDifficulty Difficulty { get; set; } = QuestDifficulty.Medium; public string Skill { get; set; } = skills[0]; }
+}

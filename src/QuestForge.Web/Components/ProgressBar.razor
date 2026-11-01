@@ -1,0 +1,2 @@
+<div class="progress-track" role="progressbar" aria-label="@Label" aria-valuenow="@Value" aria-valuemin="0" aria-valuemax="@Maximum"><div style="width:@Percent%"></div></div>
+@code { [Parameter] public int Value { get; set; } [Parameter] public int Maximum { get; set; } = 100; [Parameter] public string Label { get; set; } = "Progress"; private int Percent => Maximum <= 0 ? 0 : Math.Clamp(Value * 100 / Maximum, 0, 100); }

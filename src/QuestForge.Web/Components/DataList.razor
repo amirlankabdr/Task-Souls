@@ -1,0 +1,3 @@
+@typeparam TItem
+@if (Items.Count == 0) { @EmptyContent } else { @foreach (var item in Items) { @ItemTemplate(item) } }
+@code { [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = []; [Parameter, EditorRequired] public RenderFragment<TItem> ItemTemplate { get; set; } = default!; [Parameter] public RenderFragment? EmptyContent { get; set; } }

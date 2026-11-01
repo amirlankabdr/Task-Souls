@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/QuestForge.Core/QuestForge.Core.csproj" />
+    <Project Path="src/QuestForge.Infrastructure/QuestForge.Infrastructure.csproj" />
+    <Project Path="src/QuestForge.Web/QuestForge.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/QuestForge.Core.Tests/QuestForge.Core.Tests.csproj" />
+    <Project Path="tests/QuestForge.E2ETests/QuestForge.E2ETests.csproj" />
+    <Project Path="tests/QuestForge.IntegrationTests/QuestForge.IntegrationTests.csproj" />
+    <Project Path="tests/QuestForge.Web.Tests/QuestForge.Web.Tests.csproj" />
+  </Folder>
+</Solution>
