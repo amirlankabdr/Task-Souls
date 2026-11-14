@@ -72,3 +72,9 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.quest-controls { border: 0; padding: 0; margin: 0; min-width: 0; }
+.pagination-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin: 1.5rem 0; }
+button:disabled { opacity: .55; cursor: wait; }
+:focus-visible { outline: 3px solid #bda4ff; outline-offset: 3px; }
+@media (max-width: 640px) { .quest-card { flex-wrap: wrap; } .quest-copy { min-width: 0; overflow-wrap: anywhere; } }
