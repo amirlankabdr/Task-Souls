@@ -15,7 +15,7 @@ Team: Aslanuly Ulanbek and Amirlan Kabdyrakym.
 - ASP.NET Core Identity registration/login, `User`/`Admin` roles, and per-user data isolation.
 - Unit, bUnit, service-level, Testcontainers, and Playwright test projects.
 
-Verified on 26 October 2026: Docker Compose starts PostgreSQL and the web app successfully; the full automated suite passes (28 tests). The pure Core project has 95.58% line coverage and 89.47% branch coverage. Cross-browser/device testing outside Chromium desktop still needs to be performed and recorded before defence.
+This updated version adds shared functional validation, quest pagination, guarded UI actions, and serialized per-player database completion. See START_HERE.md for installation and verification limits. Previous test counts do not certify this update; rerun the suite before submission.
 
 ## Run locally
 

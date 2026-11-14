@@ -10,3 +10,5 @@
 | LINQ/lambdas | `NewlyUnlocked` | Filters rules | Declarative transformation |
 | Result type | `Result<T>` | Returns expected failures | Avoids exception control flow |
 | Functional core / imperative shell | Core vs Infrastructure | Core computes; service coordinates | Isolates side effects |
+
+Map and Bind: ResultExtensions.cs; QuestDraftValidation.Validate chains normalisation and failing checks. Both service implementations call it. EfQuestService now calls Progression.ApplyReward for XP state calculation.
