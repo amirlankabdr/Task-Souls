@@ -96,3 +96,5 @@ main {
         right: 0.75rem;
         top: 0.5rem;
     }
+
+.top-row { background: #111521; border-bottom: 1px solid #303747; color: #c5cce0; }
