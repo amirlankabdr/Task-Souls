@@ -13,11 +13,12 @@ public sealed class InMemoryQuestService(TimeProvider timeProvider) : IQuestServ
 
     public Task<Result<Quest>> CreateAsync(string userId, QuestDraft draft, CancellationToken cancellationToken = default)
     {
-        var title = QuestValidation.Title(draft.Title);
+        var title = QuestDraftValidation.Validate(draft);
         if (!title.IsSuccess) return Task.FromResult(Result<Quest>.Failure(title.Error!));
+        draft = title.Value!;
         if (string.IsNullOrWhiteSpace(draft.Skill)) return Task.FromResult(Result<Quest>.Failure("Skill is required."));
 
-        var quest = new Quest(Guid.NewGuid(), userId, title.Value!, draft.Description.Trim(), draft.Difficulty,
+        var quest = new Quest(Guid.NewGuid(), userId, title.Value!.Title, draft.Description.Trim(), draft.Difficulty,
             draft.Skill.Trim(), QuestStatus.Active, timeProvider.GetUtcNow());
         _quests[quest.Id] = quest;
         return Task.FromResult(Result<Quest>.Success(quest));
@@ -29,7 +30,7 @@ public sealed class InMemoryQuestService(TimeProvider timeProvider) : IQuestServ
         if (query.Status is not null) result = result.Where(q => q.Status == query.Status);
         if (query.Difficulty is not null) result = result.Where(q => q.Difficulty == query.Difficulty);
         if (!string.IsNullOrWhiteSpace(query.Search)) result = result.Where(q => q.Title.Contains(query.Search, StringComparison.OrdinalIgnoreCase));
-        return Task.FromResult<IReadOnlyList<Quest>>(result.OrderByDescending(q => q.CreatedAt)
+        return Task.FromResult<IReadOnlyList<Quest>>(result.OrderByDescending(q => q.CreatedAt).ThenBy(q => q.Id)
             .Skip((Math.Max(1, query.Page) - 1) * Math.Clamp(query.PageSize, 1, 50)).Take(Math.Clamp(query.PageSize, 1, 50)).ToArray());
     }
 
@@ -37,8 +38,9 @@ public sealed class InMemoryQuestService(TimeProvider timeProvider) : IQuestServ
     {
         if (!_quests.TryGetValue(questId, out var quest) || quest.UserId != userId) return Task.FromResult(Result<Quest>.Failure("Quest was not found."));
         if (quest.Status == QuestStatus.Completed) return Task.FromResult(Result<Quest>.Failure("Completed quests cannot be edited."));
-        var title = QuestValidation.Title(draft.Title); if (!title.IsSuccess) return Task.FromResult(Result<Quest>.Failure(title.Error!));
-        var updated = quest with { Title = title.Value!, Description = draft.Description.Trim(), Difficulty = draft.Difficulty, Skill = draft.Skill.Trim() };
+        var title = QuestDraftValidation.Validate(draft); if (!title.IsSuccess) return Task.FromResult(Result<Quest>.Failure(title.Error!));
+        draft = title.Value!;
+        var updated = quest with { Title = title.Value!.Title, Description = draft.Description.Trim(), Difficulty = draft.Difficulty, Skill = draft.Skill.Trim() };
         _quests[questId] = updated; return Task.FromResult(Result<Quest>.Success(updated));
     }
 
