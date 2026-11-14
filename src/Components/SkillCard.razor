@@ -1,0 +1,2 @@
+<article class="skill-card"><div class="section-heading"><h3>@Name</h3><b>@Xp XP</b></div><ProgressBar Value="@(Xp % 100)" Label="@($"{Name} progress")" /></article>
+@code { [Parameter, EditorRequired] public string Name { get; set; } = ""; [Parameter] public int Xp { get; set; } }
