@@ -13,13 +13,12 @@ public sealed class InMemoryQuestService(TimeProvider timeProvider) : IQuestServ
 
     public Task<Result<Quest>> CreateAsync(string userId, QuestDraft draft, CancellationToken cancellationToken = default)
     {
-        var title = QuestDraftValidation.Validate(draft);
-        if (!title.IsSuccess) return Task.FromResult(Result<Quest>.Failure(title.Error!));
-        draft = title.Value!;
-        if (string.IsNullOrWhiteSpace(draft.Skill)) return Task.FromResult(Result<Quest>.Failure("Skill is required."));
+        var validated = QuestDraftValidation.Validate(draft);
+        if (!validated.IsSuccess) return Task.FromResult(Result<Quest>.Failure(validated.Error!));
+        draft = validated.Value!;
 
-        var quest = new Quest(Guid.NewGuid(), userId, title.Value!.Title, draft.Description.Trim(), draft.Difficulty,
-            draft.Skill.Trim(), QuestStatus.Active, timeProvider.GetUtcNow());
+        var quest = new Quest(Guid.NewGuid(), userId, draft.Title, draft.Description, draft.Difficulty,
+            draft.Skill, QuestStatus.Active, timeProvider.GetUtcNow());
         _quests[quest.Id] = quest;
         return Task.FromResult(Result<Quest>.Success(quest));
     }
@@ -38,9 +37,9 @@ public sealed class InMemoryQuestService(TimeProvider timeProvider) : IQuestServ
     {
         if (!_quests.TryGetValue(questId, out var quest) || quest.UserId != userId) return Task.FromResult(Result<Quest>.Failure("Quest was not found."));
         if (quest.Status == QuestStatus.Completed) return Task.FromResult(Result<Quest>.Failure("Completed quests cannot be edited."));
-        var title = QuestDraftValidation.Validate(draft); if (!title.IsSuccess) return Task.FromResult(Result<Quest>.Failure(title.Error!));
-        draft = title.Value!;
-        var updated = quest with { Title = title.Value!.Title, Description = draft.Description.Trim(), Difficulty = draft.Difficulty, Skill = draft.Skill.Trim() };
+        var validated = QuestDraftValidation.Validate(draft); if (!validated.IsSuccess) return Task.FromResult(Result<Quest>.Failure(validated.Error!));
+        draft = validated.Value!;
+        var updated = quest with { Title = draft.Title, Description = draft.Description, Difficulty = draft.Difficulty, Skill = draft.Skill };
         _quests[questId] = updated; return Task.FromResult(Result<Quest>.Success(updated));
     }
 
