@@ -7,11 +7,10 @@ public sealed class EfQuestService(ApplicationDbContext db, TimeProvider timePro
 {
     public async Task<Result<Quest>> CreateAsync(string userId, QuestDraft draft, CancellationToken ct = default)
     {
-        var title = QuestDraftValidation.Validate(draft);
-        if (!title.IsSuccess) return Result<Quest>.Failure(title.Error!);
-        draft = title.Value!;
-        if (string.IsNullOrWhiteSpace(draft.Skill)) return Result<Quest>.Failure("Skill is required.");
-        var entity = new QuestEntity { Id = Guid.NewGuid(), UserId = userId, Title = title.Value!.Title, Description = draft.Description.Trim(), Difficulty = (int)draft.Difficulty, Skill = draft.Skill.Trim(), Status = (int)QuestStatus.Active, CreatedAt = timeProvider.GetUtcNow() };
+        var validated = QuestDraftValidation.Validate(draft);
+        if (!validated.IsSuccess) return Result<Quest>.Failure(validated.Error!);
+        draft = validated.Value!;
+        var entity = new QuestEntity { Id = Guid.NewGuid(), UserId = userId, Title = draft.Title, Description = draft.Description, Difficulty = (int)draft.Difficulty, Skill = draft.Skill, Status = (int)QuestStatus.Active, CreatedAt = timeProvider.GetUtcNow() };
         db.Quests.Add(entity); await db.SaveChangesAsync(ct); return Result<Quest>.Success(ToDomain(entity));
     }
 
@@ -20,9 +19,9 @@ public sealed class EfQuestService(ApplicationDbContext db, TimeProvider timePro
         var entity = await db.Quests.SingleOrDefaultAsync(q => q.Id == questId && q.UserId == userId, ct);
         if (entity is null) return Result<Quest>.Failure("Quest was not found.");
         if ((QuestStatus)entity.Status == QuestStatus.Completed) return Result<Quest>.Failure("Completed quests cannot be edited.");
-        var title = QuestDraftValidation.Validate(draft); if (!title.IsSuccess) return Result<Quest>.Failure(title.Error!);
-        draft = title.Value!;
-        entity.Title = title.Value!.Title; entity.Description = draft.Description.Trim(); entity.Difficulty = (int)draft.Difficulty; entity.Skill = draft.Skill.Trim();
+        var validated = QuestDraftValidation.Validate(draft); if (!validated.IsSuccess) return Result<Quest>.Failure(validated.Error!);
+        draft = validated.Value!;
+        entity.Title = draft.Title; entity.Description = draft.Description; entity.Difficulty = (int)draft.Difficulty; entity.Skill = draft.Skill;
         await db.SaveChangesAsync(ct); return Result<Quest>.Success(ToDomain(entity));
     }
 
@@ -39,7 +38,7 @@ public sealed class EfQuestService(ApplicationDbContext db, TimeProvider timePro
         var source = db.Quests.AsNoTracking().Where(q => q.UserId == userId);
         if (query.Status is not null) source = source.Where(q => q.Status == (int)query.Status);
         if (query.Difficulty is not null) source = source.Where(q => q.Difficulty == (int)query.Difficulty);
-        if (!string.IsNullOrWhiteSpace(query.Search)) source = source.Where(q => EF.Functions.ILike(q.Title, $"%{query.Search}%"));
+        if (!string.IsNullOrWhiteSpace(query.Search)) source = source.Where(q => EF.Functions.ILike(q.Title, QuestSearch.ToLikePattern(query.Search), "\\"));
         return await source.OrderByDescending(q => q.CreatedAt).ThenBy(q => q.Id).Skip((Math.Max(1, query.Page) - 1) * Math.Clamp(query.PageSize, 1, 50)).Take(Math.Clamp(query.PageSize, 1, 50)).Select(q => ToDomain(q)).ToArrayAsync(ct);
     }
 
