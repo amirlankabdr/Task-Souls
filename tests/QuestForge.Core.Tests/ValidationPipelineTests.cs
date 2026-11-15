@@ -29,5 +29,10 @@ public sealed class ValidationPipelineTests
     [Fact] public void Enforces_storage_limits() {
         Assert.False(QuestDraftValidation.Validate(new(new string('x',101), "", QuestDifficulty.Easy, "Programming")).IsSuccess);
         Assert.False(QuestDraftValidation.Validate(new("Test", "", QuestDifficulty.Easy, new string('x',41))).IsSuccess);
+        Assert.Equal("Description must be 1000 characters or fewer.",
+            QuestDraftValidation.Validate(new("Test", new string('x', 1001), QuestDifficulty.Easy, "Programming")).Error);
+    }
+    [Fact] public void Search_treats_postgresql_wildcards_as_literal_text() {
+        Assert.Equal(@"%50\%\_\\%", QuestSearch.ToLikePattern(@"50%_\"));
     }
 }
