@@ -8,6 +8,23 @@ namespace QuestForge.IntegrationTests;
 public sealed class PostgreSqlPersistenceTests
 {
     [Fact]
+    public async Task Search_treats_percent_and_underscore_as_text()
+    {
+        await using var postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
+        await postgres.StartAsync();
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseNpgsql(postgres.GetConnectionString()).Options;
+        await using var db = new ApplicationDbContext(options);
+        await db.Database.MigrateAsync();
+        var service = new EfQuestService(db, TimeProvider.System);
+        await service.CreateAsync("user", new("Reach 100%", "", QuestDifficulty.Easy, "Programming"));
+        await service.CreateAsync("user", new("A_B", "", QuestDifficulty.Easy, "Programming"));
+        await service.CreateAsync("user", new("Plain", "", QuestDifficulty.Easy, "Programming"));
+
+        Assert.Equal("Reach 100%", Assert.Single(await service.ListAsync("user", new(Search: "%"))).Title);
+        Assert.Equal("A_B", Assert.Single(await service.ListAsync("user", new(Search: "_"))).Title);
+    }
+
+    [Fact]
     public async Task Completion_is_persisted_and_idempotent_in_postgresql()
     {
         await using var postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
