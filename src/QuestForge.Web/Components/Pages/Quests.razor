@@ -15,7 +15,7 @@
 <section class="panel quest-form">
     <div class="section-heading"><h2>@(editingId is null ? "New quest" : "Edit quest")</h2>@if (editingId is not null) { <button class="ghost" @onclick="CancelEdit">Cancel</button> }</div>
     <div class="form-grid"><label>Title<input @bind="draft.Title" maxlength="100" placeholder="Build the authentication flow" /></label><label>Skill<select @bind="draft.Skill">@foreach (var skill in skills) { <option>@skill</option> }</select></label><label>Difficulty<select @bind="draft.Difficulty">@foreach (var difficulty in Enum.GetValues<QuestDifficulty>()) { <option value="@difficulty">@difficulty</option> }</select></label></div>
-    <label>Description<textarea @bind="draft.Description" placeholder="What does done look like?"></textarea></label>
+    <label>Description<textarea @bind="draft.Description" maxlength="1000" placeholder="What does done look like?"></textarea></label>
 
     <button class="button" @onclick="Save">@(editingId is null ? "Add to quest log" : "Save changes")</button>
 </section>
