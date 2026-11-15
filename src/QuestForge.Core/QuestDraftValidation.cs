@@ -9,6 +9,8 @@ public static class QuestDraftValidation
                 ? Result<QuestDraft>.Failure("Skill is required.") : Result<QuestDraft>.Success(d))
             .Bind(d => d.Skill.Length > 40
                 ? Result<QuestDraft>.Failure("Skill must be 40 characters or fewer.") : Result<QuestDraft>.Success(d))
+            .Bind(d => d.Description.Length > 1000
+                ? Result<QuestDraft>.Failure("Description must be 1000 characters or fewer.") : Result<QuestDraft>.Success(d))
             .Bind(d => !Enum.IsDefined(d.Difficulty)
                 ? Result<QuestDraft>.Failure("Choose a valid difficulty.") : Result<QuestDraft>.Success(d));
 }
