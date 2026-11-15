@@ -27,4 +27,15 @@ public sealed class ComponentTests
         Assert.Contains("locked", cut.Find("article").ClassList);
         Assert.Contains(achievement.Name, cut.Markup);
     }
+
+    [Fact]
+    public void Completed_quest_shows_earned_xp_without_action_buttons()
+    {
+        using var context = new BunitContext();
+        var quest = new Quest(Guid.NewGuid(), "user", "Done", "", QuestDifficulty.Medium,
+            "Programming", QuestStatus.Completed, DateTimeOffset.UtcNow);
+        var cut = context.Render<QuestCard>(p => p.Add(x => x.Quest, quest));
+        Assert.Contains("Earned 25 XP", cut.Markup);
+        Assert.Empty(cut.FindAll("button"));
+    }
 }
